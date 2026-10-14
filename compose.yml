@@ -1,0 +1,47 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: campus-hub-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: LLL2006
+      MYSQL_DATABASE: campus_hub
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLLL2006"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - campus-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: campus-hub-backend
+    container_name: campus-hub-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=jdbc:mysql://mysql:3306/campus_hub?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      - DB_USERNAME=root
+      - DB_PASSWORD=LLL2006
+      - SERVER_PORT=8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - campus-network
+
+volumes:
+  mysql_data:
+
+networks:
+  campus-network:
+    driver: bridge
